@@ -1,0 +1,55 @@
+---
+- name: Push Docker image to AWS ECR
+  hosts: localhost
+  vars:
+    aws_region: "us-east-1"
+    ecr_repository: "docker-image-push-to-ecr-using-ansible"
+    image_name: "my-app"
+    image_tag: "latest"
+    account_id: "013492164175"
+  tasks:
+    - name: Log in to AWS ECR
+      shell: |
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 013492164175.dkr.ecr.us-east-1.amazonaws.com
+      register: login_result
+
+    - name: Debug login result
+      debug:
+        var: login_result
+
+    - name: Build the Docker image
+      become: yes
+      command: docker build -t docker-image-push-to-ecr-using-ansible .
+      register: build_result
+
+    - name: Debug build result
+      debug:
+        var: build_result
+
+    - name: Tag the Docker image
+      become: yes
+      command: docker tag docker-image-push-to-ecr-using-ansible:latest 013492164175.dkr.ecr.us-east-1.amazonaws.com/docker-image-push-to-ecr-using-ansible:latest
+      register: tag_result
+
+    - name: Debug tag result
+      debug:
+        var: tag_result
+
+    - name: Log in to AWS ECR before push
+      shell: |
+        aws ecr get-login-password --region {{ aws_region }} | docker login --username AWS --password-stdin {{ account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com
+      register: pre_push_login_result
+
+    - name: Debug pre-push login result
+      debug:
+        var: pre_push_login_result
+
+    - name: Push the Docker image to ECR
+      become: yes
+      command: docker push 013492164175.dkr.ecr.us-east-1.amazonaws.com/docker-image-push-to-ecr-using-ansible:latest
+      register: push_result
+
+    - name: Debug push result
+      debug:
+        var: push_result
+
