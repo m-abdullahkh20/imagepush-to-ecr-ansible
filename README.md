@@ -1,0 +1,1 @@
+# imagepush-to-ecr-ansible
